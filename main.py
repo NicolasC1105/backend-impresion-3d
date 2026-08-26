@@ -13,34 +13,37 @@ app.add_middleware(
 )
 
 # --- CONFIGURACIÓN DE GMAIL ---
-# --- CONFIGURACIÓN DE GMAIL ---
 TU_CORREO = "nicolascorreaballen835@gmail.com" 
-PASSWORD_APP = "momegmjifazehgrg" # Todo junto, sin espacios # Pega la clave que te dio Google
+PASSWORD_APP = "aqui_las_16_letras_sin_espacios" # Pega tu clave real aquí
 
 def enviar_correo_gmail(nombre, telefono, material, nombre_archivo, contenido_archivo):
-    msg = EmailMessage()
-    msg['Subject'] = f"🚀 NUEVO PEDIDO 3D - {nombre}"
-    msg['From'] = TU_CORREO
-    msg['To'] = TU_CORREO # Te lo envías a ti mismo
+    print(f"🚀 INICIANDO EL ENVÍO DE CORREO PARA: {nombre}")
     
-    # El cuerpo del correo
-    cuerpo = f"""
-    ¡Tienes un nuevo pedido desde tu web!
-    
-    👤 Cliente: {nombre}
-    📱 WhatsApp: {telefono}
-    🎨 Material: {material}
-    📁 El archivo 3D viene adjunto a este correo.
-    """
-    msg.set_content(cuerpo)
-    
-    # Empaquetamos el archivo .stl o .obj
-    msg.add_attachment(contenido_archivo, maintype='application', subtype='octet-stream', filename=nombre_archivo)
-    
-    # Conexión con el servidor de Google
-    with smtplib.SMTP_SSL('smtp.gmail.com', 465) as smtp:
-        smtp.login(TU_CORREO, PASSWORD_APP)
-        smtp.send_message(msg)
+    try:
+        msg = EmailMessage()
+        msg['Subject'] = f"🚀 NUEVO PEDIDO 3D - {nombre}"
+        msg['From'] = TU_CORREO
+        msg['To'] = TU_CORREO 
+        
+        cuerpo = f"""
+        ¡Tienes un nuevo pedido desde tu web!
+        
+        👤 Cliente: {nombre}
+        📱 WhatsApp: {telefono}
+        🎨 Material: {material}
+        """
+        msg.set_content(cuerpo)
+        msg.add_attachment(contenido_archivo, maintype='application', subtype='octet-stream', filename=nombre_archivo)
+        
+        print("🔌 Conectando con Google...")
+        with smtplib.SMTP_SSL('smtp.gmail.com', 465) as smtp:
+            smtp.login(TU_CORREO, PASSWORD_APP)
+            smtp.send_message(msg)
+            
+        print("✅ ¡CORREO ENVIADO CON ÉXITO A GMAIL!")
+        
+    except Exception as e:
+        print(f"❌ ERROR FATAL AL ENVIAR EL CORREO: {e}")
 
 @app.post("/test-pedido/")
 async def simular_pedido(
@@ -49,7 +52,7 @@ async def simular_pedido(
     material: str = Form(...),
     archivo: UploadFile = File(...)
 ):
-    # Leemos el archivo y disparamos el correo
+    print(f"📦 Archivo recibido en el servidor: {archivo.filename}")
     contenido = await archivo.read()
     enviar_correo_gmail(nombre, telefono, material, archivo.filename, contenido)
     
