@@ -15,7 +15,7 @@ app.add_middleware(
 # --- CONFIGURACIÓN DE GMAIL ---
 # --- CONFIGURACIÓN DE GMAIL ---
 TU_CORREO = "nicolascorreaballen835@gmail.com" 
-PASSWORD_APP = "mome gmji faze hgrg" # Todo junto, sin espacios # Pega la clave que te dio Google
+PASSWORD_APP = "momegmjifazehgrg" # Todo junto, sin espacios # Pega la clave que te dio Google
 
 def enviar_correo_gmail(nombre, telefono, material, nombre_archivo, contenido_archivo):
     msg = EmailMessage()
