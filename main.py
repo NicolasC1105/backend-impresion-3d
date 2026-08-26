@@ -1,6 +1,7 @@
 from fastapi import FastAPI, File, UploadFile, Form
 from fastapi.middleware.cors import CORSMiddleware
-import requests
+import smtplib
+from email.message import EmailMessage
 
 app = FastAPI()
 
@@ -11,18 +12,34 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-TOKEN_BOT = "8204243004:AAE8RFLI30dgGZe6nKpvGAYIcZLIhDORXcM"
-TU_CHAT_ID = "7024211153"
+# --- CONFIGURACIÓN DE GMAIL ---
+TU_CORREO = "aqui_tu_correo@gmail.com" 
+PASSWORD_APP = "aqui_las_16_letras_sin_espacios" # Pega la clave que te dio Google
 
-# Nueva función mejorada que envía texto + archivo adjunto
-def enviar_documento_telegram(mensaje: str, nombre_archivo: str, contenido_archivo: bytes):
-    url = f"https://api.telegram.org/bot{TOKEN_BOT}/sendDocument"
-    # El texto ahora va en "caption" (la leyenda del archivo)
-    payload = {"chat_id": TU_CHAT_ID, "caption": mensaje}
-    # Empaquetamos el archivo físico
-    archivos = {"document": (nombre_archivo, contenido_archivo)}
+def enviar_correo_gmail(nombre, telefono, material, nombre_archivo, contenido_archivo):
+    msg = EmailMessage()
+    msg['Subject'] = f"🚀 NUEVO PEDIDO 3D - {nombre}"
+    msg['From'] = TU_CORREO
+    msg['To'] = TU_CORREO # Te lo envías a ti mismo
     
-    requests.post(url, data=payload, files=archivos)
+    # El cuerpo del correo
+    cuerpo = f"""
+    ¡Tienes un nuevo pedido desde tu web!
+    
+    👤 Cliente: {nombre}
+    📱 WhatsApp: {telefono}
+    🎨 Material: {material}
+    📁 El archivo 3D viene adjunto a este correo.
+    """
+    msg.set_content(cuerpo)
+    
+    # Empaquetamos el archivo .stl o .obj
+    msg.add_attachment(contenido_archivo, maintype='application', subtype='octet-stream', filename=nombre_archivo)
+    
+    # Conexión con el servidor de Google
+    with smtplib.SMTP_SSL('smtp.gmail.com', 465) as smtp:
+        smtp.login(TU_CORREO, PASSWORD_APP)
+        smtp.send_message(msg)
 
 @app.post("/test-pedido/")
 async def simular_pedido(
@@ -31,19 +48,8 @@ async def simular_pedido(
     material: str = Form(...),
     archivo: UploadFile = File(...)
 ):
-    
-    # 1. Leemos el archivo directamente en la memoria RAM (ya no usamos el disco duro)
+    # Leemos el archivo y disparamos el correo
     contenido = await archivo.read()
-
-    # 2. Armamos el reporte
-    mensaje = (
-        f"🚀 ¡NUEVO PEDIDO RECIBIDO!\n\n"
-        f"👤 Cliente: {nombre}\n"
-        f"📱 WhatsApp: {telefono}\n"
-        f"🎨 Material: {material}"
-    )
-    
-    # 3. Disparamos todo junto directo a tu celular
-    enviar_documento_telegram(mensaje, archivo.filename, contenido)
+    enviar_correo_gmail(nombre, telefono, material, archivo.filename, contenido)
     
     return {"estado": "Éxito"}
